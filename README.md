@@ -13,3 +13,6 @@ http://www.algonotes.com/pl/archive/oi/ elephants
 3)check 4 memory leaks
 
 4)remove all output from stdout
+
+
+Be careful, elek weights are implemented in wrong way in previous versions,
