@@ -31,6 +31,8 @@ public class EleksProblem {
         graphInCycles();
         separeteCyclesTest();
 
+        showWeightsTest();
+
         calculateTheCost();
     }
 
@@ -54,10 +56,8 @@ public class EleksProblem {
         String minimumOfCycleNumber = getMinimumOfCycle(copiedCycle);
 
         while (!Objects.equals(copiedNextOf.get(minimumOfCycleNumber), minimumOfCycleNumber)) {
-            System.out.println("While in method1... ");
             String previous = copiedPreviousOf.get(minimumOfCycleNumber);
             System.out.println("Previous: " + previous + " MinC: " + minimumOfCycleNumber);
-            // step 0/2 check if steps are ok?
             // 1/2
             copiedNextOf.put(copiedPreviousOf.get(previous), minimumOfCycleNumber);
             copiedPreviousOf.put(minimumOfCycleNumber, copiedPreviousOf.get(previous));
@@ -70,7 +70,30 @@ public class EleksProblem {
         }
         previousOfM1 = copiedPreviousOf;
         nextOfM1 = copiedNextOf;
+        if (method1Cost == method1Checker(copiedCycle, minimumOfCycleNumber)) {
+
+        } else {
+            throw new IllegalStateException("method1Cost is calculated wrong");
+        }
         return method1Cost;
+    }
+
+    public float method1Checker(List<String> copiedCycle, String minC) {
+        float sum = 0;
+        for (String cycleId : copiedCycle) {
+            sum += weightOf.get(cycleId);
+        }
+        float more = (copiedCycle.size() - 2) * weightOf.get(minC);
+        return sum + more;
+    }
+
+    public float method2Checker(List<String> copiedCycle, String minC) {
+        float sum = 0;
+        for (String cycleId : copiedCycle) {
+            sum += weightOf.get(cycleId);
+        }
+        float more = weightOf.get(minC) + (copiedCycle.size() + 1) * weightOf.get(minAbs);
+        return sum + more;
     }
 
     public float method2(int cycleId) {
@@ -80,8 +103,8 @@ public class EleksProblem {
         Map<String, String> copiedPreviousOf = new HashMap<String, String>(previousOf);
         String minimumOfCycleNumber = getMinimumOfCycle(copiedCycle);
 
-        if (weightOf.get(minimumOfCycleNumber) <= weightOf.get(minAbs)) {
-            // there is no point to swap
+        if (weightOf.get(minimumOfCycleNumber) <= weightOf.get(minAbs) || copiedCycle.size() == 1) {
+            // there is no point to swap minAbs with minC
             if (weightOf.get(minimumOfCycleNumber) < weightOf.get(minAbs)) {
                 new Exception("Imposible, check code for errors. Min Abs should be the smallest");
             }
@@ -91,8 +114,7 @@ public class EleksProblem {
             nextOfM2 = nextOfM1;
             return method2Cost;
         } else {
-            // save data before swap, there is no need to resore if i operate on copy of
-            // data?
+            // save data before swap
             String savePreviousOfMinAbs = copiedPreviousOf.get(minAbs);
             String saveNextOfMinAbs = copiedNextOf.get(minAbs);
 
@@ -106,7 +128,6 @@ public class EleksProblem {
                 System.out.println("While in method2... ");
                 String previous = copiedPreviousOf.get(minAbs);
                 System.out.println("Previous: " + previous + " MinC: " + minAbs);
-                // step 0/2 check if steps are ok?
                 // 1/2
                 copiedNextOf.put(copiedPreviousOf.get(previous), minAbs);
                 copiedPreviousOf.put(minAbs, copiedPreviousOf.get(previous));
@@ -120,34 +141,83 @@ public class EleksProblem {
             // restore data after swap
             method2Cost += weightOf.get(minAbs);
             method2Cost += weightOf.get(minimumOfCycleNumber);
+
+            // A-> X ->C
+            RestoreElement(minAbs, savePreviousOfMinAbs, saveNextOfMinAbs, copiedNextOf, copiedPreviousOf);
+
             previousOfM2 = copiedPreviousOf;
             nextOfM2 = copiedNextOf;
+
+            if (method2Cost == method1Checker(copiedCycle, minimumOfCycleNumber)) {
+
+            } else {
+                throw new IllegalStateException("method1Cost is calculated wrong");
+            }
+
             return method2Cost;
         }
     }
 
-    public void ChangeElement(String elementX, String elementY, Map<String, String> copiedNextOf,
+    public void setAsNext(String elemX, String elemY, Map<String, String> copiedNextOf,
+            Map<String, String> copiedPreviousOf) {
+        // sets Y as next element of X, X->Y
+        copiedNextOf.put(elemX, elemY);
+        copiedPreviousOf.put(elemY, elemX);
+    }
+
+    public void setAsPrevious(String elemX, String elemY, Map<String, String> copiedNextOf,
+            Map<String, String> copiedPreviousOf) {
+        // sets Y as previous element of X, Y->X
+        copiedPreviousOf.put(elemX, elemY);
+        copiedNextOf.put(elemY, elemX);
+    }
+
+    public void RestoreElement(String elementMinAbs, String savedPrevious, String savedNext,
+            Map<String, String> copiedNextOf,
+            Map<String, String> copiedPreviousOf) {
+        // Connect element minAbs to his old values
+
+        // connection Previous->minAbs
+        setAsNext(savedPrevious, elementMinAbs, copiedNextOf, copiedPreviousOf);
+
+        // copiedNextOf.put(savedPrevious, elementMinAbs);
+        // copiedPreviousOf.put(elementMinAbs, savedPrevious);
+
+        // conection minAbs->Next
+        setAsNext(elementMinAbs, savedNext, copiedNextOf, copiedPreviousOf);
+
+        // copiedNextOf.put(elementMinAbs, savedNext);
+        // copiedPreviousOf.put(savedNext, elementMinAbs);
+
+    }
+
+    public void ChangeElement(String minC, String minAbs, Map<String, String> copiedNextOf,
             Map<String, String> copiedPreviousOf) {
         // C->B->A change X to Y
-        String elementA = copiedNextOf.get(elementX);
-        // String elementB=elementX;
-        String elementC = copiedPreviousOf.get(elementX);
+        // String elementA = copiedNextOf.get(elementX);
+        // String elementC = copiedPreviousOf.get(elementX);
 
-        copiedPreviousOf.put(elementA, elementY);
-        copiedNextOf.put(elementY, elementA);
+        // copiedPreviousOf.put(elementA, elementY);
+        // copiedNextOf.put(elementY, elementA);
 
-        copiedPreviousOf.put(elementY, elementC);
-        copiedNextOf.put(elementC, elementY);
+        // copiedPreviousOf.put(elementY, elementC);
+        // copiedNextOf.put(elementC, elementY);
+        String previous = copiedPreviousOf.get(minC);
+        String next = copiedNextOf.get(minC);
+
+        setAsNext(minAbs, next, copiedNextOf, copiedPreviousOf);
+        setAsNext(previous, minAbs, copiedNextOf, copiedPreviousOf);
     }
 
     public void calculateTheCost() {
         float totalCost = 0;
         for (int i = 0; i < cycles.size(); i++) {
-            System.out.println("Zaczynam Obieg: " + i);
+            System.out.println("Analiza cyklu o id: " + i);
             float method1Cost = method1(i);
             System.out.println("Koncze metode1, koszt: " + method1Cost);
             float method2Cost = method2(i);
             System.out.println("Koncze metode2, koszt: " + method2Cost);
+            System.out.print("\n");
             if (method1Cost <= method2Cost) {
                 totalCost += method1Cost;
                 // change graph accordingly
@@ -172,6 +242,16 @@ public class EleksProblem {
             }
             System.out.print("\n");
         }
+    }
+
+    public void showWeightsTest() {
+        System.out.println("Weights:");
+        for (Map.Entry<String, Float> entry : weightOf.entrySet()) {
+            String key = entry.getKey();
+            float value = entry.getValue();
+            System.out.print(" [" + key + "]" + " = " + value);
+        }
+        System.out.print("\n");
     }
 
     public void graphInCycles() {
